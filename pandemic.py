@@ -3,6 +3,7 @@
 import copy
 import readline
 import sys
+import re
 
 class SimpleCompleter(object):
 
@@ -33,6 +34,7 @@ class PandemicInfections(object):
     self.stack = []
     self.cards_drawn = []
     self.state_filename = state_filename
+    self.level = 2
     self.setup(cities_file)
 
   def setup(self, cities_file):
@@ -45,6 +47,15 @@ class PandemicInfections(object):
     options.append('EPIDEMIC')
     readline.set_completer(SimpleCompleter(options).complete)
     readline.parse_and_bind('tab: complete')
+
+  def set_level(self):
+    question = 'Set infection level to? '
+    impossible = 'Invalid input! Please enter a number.'
+    line = input(question)
+    while not re.match('^\d+$', line):
+      print(impossible)
+      line = input(question)
+    self.level = int(line)
 
   def read_cities(self, filename):
     # Read input file with city names.
@@ -110,7 +121,7 @@ class PandemicInfections(object):
 
   def write_state(self):
     # Write the current state to disk
-    with open(self.state_filename, 'w') as f:
+    with open(self.state_filename, 'a') as f:
       self.print_state(f=f)
 
   def read_state(self):
@@ -122,7 +133,14 @@ class PandemicInfections(object):
     with open(self.state_filename, 'r') as f:
       for line in f:
         line = line.strip('\n')
+        if 'The Deck' in line:
+          prev_level = 0
+          temp = []
+          self.stack = []
+          self.cards_drawn = []
         if line.startswith('#') or line.startswith('-') or not line:
+          continue
+        if not re.search('^(d|\d+) \w+$', line):
           continue
         level, city = line.split(' ')
         if level == 'd':
@@ -142,12 +160,18 @@ class PandemicInfections(object):
   def calculate_probability(self, city, N):
     # Calculate the probability to draw city at least once in N draws.
     toy_stack = copy.deepcopy(self.stack)
-    toy_pile = toy_stack.pop()
+    N_cards = sum([len(x) for x in toy_stack])
+    N = min(N, N_cards)
     total_prob = 0.0
+    toy_pile = toy_stack.pop()
     for i in range(N):
+      if not toy_pile:
+        assert(toy_stack)
+        toy_pile = toy_stack.pop()
       total = len(toy_pile)
+      assert(total > 0)
       count = toy_pile.count(city)
-      probability = count/total
+      probability = count / total
       total_prob += (1.0 - total_prob) * probability
       if total_prob == 1.0:
         return total_prob
@@ -157,21 +181,35 @@ class PandemicInfections(object):
           break
       else:
         assert(False)
-      if not toy_pile:
-        toy_pile = toy_stack.pop()
     return total_prob
 
-  def print_probabilities(self):
+  def print_all_probabilities(self, f=sys.stdout):
     # Print probabilities
-    print()
-    print('%-15s %6d %6d %6d %6d %6d' % ('Name', 1, 2, 3, 4, 5))
-    print('--------------------------------------------------')
+    print('', file=f)
+    print('%-15s %6d %6d %6d %6d %6d' % ('Name', 1, 2, 3, 4, 5), file=f)
+    print('--------------------------------------------------', file=f)
     for x in sorted(set(self.cities), key=self.cities.index):
       line = '%-15s ' % x
       for n in range(1,6):
         p = self.calculate_probability(x, n)
         line += "%5.1f%% " % (100.0 * p)
-      print(line)
+      print(line, file=f)
+
+  def print_probabilities(self, f=sys.stdout):
+    # Print probabilities
+    print('', file=f)
+    print('%-15s %6s' % ('Name', 'N=%d'% self.level), file=f)
+    print('----------------------', file=f)
+    probabilities = [ (x, self.calculate_probability(x, self.level)) for x in set(self.cities) ]
+    for x, p in sorted(probabilities, key=lambda x: x[1], reverse=True):
+      line = '%-15s ' % x
+      line += "%5.1f%%" % (100.0 * p)
+      print(line, file=f)
+
+  def write_probabilities(self):
+    # Write the current state to disk
+    with open(self.state_filename, 'a') as f:
+      self.print_probabilities(f=f)
 
   def run(self):
     # The main input loop
@@ -181,11 +219,13 @@ class PandemicInfections(object):
       # Get new input
       print()
       line = input(question)
-      while line != 'EPIDEMIC' and line != 'READ' and not line in self.stack[-1]:
+      while line not in ['EPIDEMIC', 'READ', 'LEVEL'] and not line in self.stack[-1]:
         print(impossible)
         line = input(question)
       # Process
-      if line == 'READ':
+      if line == 'LEVEL':
+        self.set_level()
+      elif line == 'READ':
         self.read_state()
       elif line == 'EPIDEMIC':
         self.epidemic()
@@ -195,6 +235,7 @@ class PandemicInfections(object):
       self.print_state()
       self.print_probabilities()
       self.write_state()
+      self.write_probabilities()
 
 # Start the input loop
 cities_file = sys.argv[1]
