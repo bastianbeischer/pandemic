@@ -2,29 +2,10 @@
 
 import copy
 import readline
-
-cities = []
-
-# Black
-cities += 3*['Kairo']
-cities += 3*['Istanbul']
-cities += 3*['Tripolis']
-
-# Blue
-cities += 3*['London']
-cities += 3*['NewYork']
-cities += 3*['Washington']
-
-# Yellow
-cities += 3*['Jacksonville']
-cities += 3*['SaoPaolo']
-cities += 3*['Lagos']
-
-stack = []
-current_pile = copy.copy(cities)
-cards_drawn = []
+import sys
 
 class SimpleCompleter(object):
+
   def __init__(self, options):
     self.options = sorted(options)
     return
@@ -45,171 +26,176 @@ class SimpleCompleter(object):
       response = None
     return response
 
-def draw_card(line):
-  global cards_drawn, current_pile
-  cards_drawn.append(line)
-  assert(len(current_pile) > 0)
-  current_pile.remove(line)
-  if not current_pile:
-    current_pile = stack.pop()
+class PandemicInfections(object):
 
-def epidemic():
-  global stack, current_pile, cards_drawn
-  question = 'Which city was drawn from the bottom in the Epidemic? '
-  impossible = 'This is impossible!'
-  line = input(question)
-  if len(stack) > 0:
-    front_pile = stack[0]
-    stack.remove(front_pile)
-    while not line in front_pile:
-      print(impossible)
-      line = input(question)
-    front_pile.remove(line)
-    cards_drawn.append(line)
-    if len(front_pile) > 0:
-      stack.insert(0, front_pile)
-  else:
-    while not line in current_pile:
-      print(impossible)
-      line = input(question)
-    current_pile.remove(line)
-    cards_drawn.append(line)
-  if len(current_pile) > 0:
-    stack.append(current_pile)
-  stack.append(sorted(cards_drawn))
-  current_pile = stack.pop()
-  cards_drawn = []
+  def __init__(self, cities):
+    self.cities = cities
+    self.stack = []
+    self.current_pile = copy.copy(cities)
+    self.cards_drawn = []
 
-def calculate_probability(city, N):
-  global stack, current_pile
-  toy_stack = copy.deepcopy(stack)
-  toy_pile = copy.deepcopy(current_pile)
+  def draw_card(self, line):
+    self.cards_drawn.append(line)
+    assert(len(self.current_pile) > 0)
+    self.current_pile.remove(line)
+    if not self.current_pile:
+      self.current_pile = self.stack.pop()
 
-  total_prob = 0.0
-  for i in range(N):
-    total = len(toy_pile)
-    count = toy_pile.count(city)
-    probability = count/total
-    total_prob += (1.0 - total_prob) * probability
-    if total_prob == 1.0:
-      return total_prob
-    for x in toy_pile:
-      if x != city:
-        toy_pile.remove(x)
-        break
+  def epidemic(self):
+    question = 'Which city was drawn from the bottom in the Epidemic? '
+    impossible = 'This is impossible!'
+    line = input(question)
+    if len(self.stack) > 0:
+      front_pile = self.stack[0]
+      self.stack.remove(front_pile)
+      while not line in front_pile:
+        print(impossible)
+        line = input(question)
+      front_pile.remove(line)
+      self.cards_drawn.append(line)
+      if len(front_pile) > 0:
+        self.stack.insert(0, front_pile)
     else:
-      assert(False)
-    if len(toy_pile) == 0:
-      toy_pile = toy_stack.pop()
-  return total_prob
+      while not line in self.current_pile:
+        print(impossible)
+        line = input(question)
+      self.current_pile.remove(line)
+      self.cards_drawn.append(line)
+    if len(self.current_pile) > 0:
+      self.stack.append(self.current_pile)
+    self.stack.append(sorted(self.cards_drawn))
+    self.current_pile = self.stack.pop()
+    self.cards_drawn = []
 
-def print_state():
-  global stack, current_pile, cards_drawn
-  i = 0
-  print()
-  print('############################')
-  print('###       The Deck       ###')
-  for x in stack:
-    for city in x:
-      print(i, city)
-    print('----------------------------')
-    i += 1
-  for city in current_pile:
-    print('c', city)
-  print('############################')
-  print()
-  print('############################')
-  print('###       Discard        ###')
-  for city in cards_drawn:
-    print('d', city)
-  print('############################')
-
-def write():
-  global stack, current_pile, cards_drawn
-  i = 0
-  with open('state.txt', 'w') as f:
+  def print_state(self, f=sys.stdout):
+    i = 0
+    print('', file=f)
     print('############################', file=f)
     print('###       The Deck       ###', file=f)
-    for x in stack:
+    for x in self.stack:
       for city in x:
         print(i, city, file=f)
       print('----------------------------', file=f)
       i += 1
-    for city in current_pile:
+    for city in self.current_pile:
       print('c', city, file=f)
     print('############################', file=f)
     print('', file=f)
     print('############################', file=f)
     print('###       Discard        ###', file=f)
-    for city in cards_drawn:
+    for city in self.cards_drawn:
       print('d', city, file=f)
     print('############################', file=f)
 
-def read():
-  global stack, current_pile, cards_drawn
-  stack = []
-  current_pile = []
-  cards_drawn = []
+  def write_state(self):
+    with open('state.txt', 'w') as f:
+      self.print_state(f=f)
 
-  prev_cat = 0
-  temp = []
-  with open('state.txt', 'r') as f:
-    for line in f:
-      line = line.strip('\n')
-      if line.startswith('#') or line.startswith('-') or not line:
-        continue
-      cat, city = line.split(' ')
-      print(cat, city)
-      if cat == 'c':
-        current_pile.append(city)
-      elif cat == 'd':
-        cards_drawn.append(city)
-      else:
-        if cat == prev_cat:
-          temp.append(city)
+  def read_state(self):
+    self.stack = []
+    self.current_pile = []
+    self.cards_drawn = []
+
+    prev_cat = 0
+    temp = []
+    with open('state.txt', 'r') as f:
+      for line in f:
+        line = line.strip('\n')
+        if line.startswith('#') or line.startswith('-') or not line:
+          continue
+        cat, city = line.split(' ')
+        print(cat, city)
+        if cat == 'c':
+          self.current_pile.append(city)
+        elif cat == 'd':
+          self.cards_drawn.append(city)
         else:
-          stack.append(temp)
-          temp = []
-          temp.append(city)
-          prev_cat = cat
+          if cat == prev_cat:
+            temp.append(city)
+          else:
+            self.stack.append(temp)
+            temp = []
+            temp.append(city)
+            prev_cat = cat
+      if len(temp) > 0:
+        self.stack.append(temp)
+      if len(self.current_pile) == 0:
+        self.current_pile = self.stack.pop()
 
-def print_probabilities():
-  global cities
-  print()
-  print('%-15s %6d %6d %6d %6d %6d' % ('Name', 1, 2, 3, 4, 5))
-  for x in sorted(set(cities)):
-    line = '%-15s ' % x
-    for n in range(1,6):
-      p = calculate_probability(x, n)
-      line += "%5.1f%% " % (100.0 * p)
-    print(line)
-  print()
+  def calculate_probability(self, city, N):
+    toy_stack = copy.deepcopy(self.stack)
+    toy_pile = copy.deepcopy(self.current_pile)
 
-def input_loop():
-  global stack, current_pile, cards_drawn
-  question = 'Please enter the name of the city which was drawn or "Epidemic": '
-  impossible = 'This is impossible!'
-  line = ''
-  while True:
+    total_prob = 0.0
+    for i in range(N):
+      total = len(toy_pile)
+      count = toy_pile.count(city)
+      probability = count/total
+      total_prob += (1.0 - total_prob) * probability
+      if total_prob == 1.0:
+        return total_prob
+      for x in toy_pile:
+        if x != city:
+          toy_pile.remove(x)
+          break
+      else:
+        assert(False)
+      if len(toy_pile) == 0:
+        toy_pile = toy_stack.pop()
+    return total_prob
 
-    # Get new input
-    line = input(question)
-    while line != 'Epidemic' and line != 'Read' and not line in current_pile:
-      print(impossible)
+  def print_probabilities(self):
+    print()
+    print('%-15s %6d %6d %6d %6d %6d' % ('Name', 1, 2, 3, 4, 5))
+    for x in sorted(set(self.cities)):
+      line = '%-15s ' % x
+      for n in range(1,6):
+        p = self.calculate_probability(x, n)
+        line += "%5.1f%% " % (100.0 * p)
+      print(line)
+    print()
+
+  def input_loop(self):
+    question = 'Please enter the name of the city which was drawn or "Epidemic": '
+    impossible = 'This is impossible!'
+    line = ''
+    while True:
+
+      # Get new input
       line = input(question)
+      while line != 'Epidemic' and line != 'Read' and not line in self.current_pile:
+        print(impossible)
+        line = input(question)
 
-    # Process
-    if line == 'Read':
-      read()
-    elif line == 'Epidemic':
-      epidemic()
-    else:
-      draw_card(line)
+      # Process
+      if line == 'Read':
+        self.read_state()
+      elif line == 'Epidemic':
+        self.epidemic()
+      else:
+        self.draw_card(line)
 
-    # Print current state
-    print_state()
-    write()
-    print_probabilities()
+      # Print current state
+      self.print_state()
+      self.write_state()
+      self.print_probabilities()
+
+cities = []
+
+# Black
+cities += 3*['Kairo']
+cities += 3*['Istanbul']
+cities += 3*['Tripolis']
+
+# Blue
+cities += 3*['London']
+cities += 3*['NewYork']
+cities += 3*['Washington']
+
+# Yellow
+cities += 3*['Jacksonville']
+cities += 3*['SaoPaolo']
+cities += 3*['Lagos']
 
 # Register the completer function and bind tab
 options = copy.copy(cities)
@@ -220,4 +206,5 @@ readline.set_completer(SimpleCompleter(options).complete)
 readline.parse_and_bind('tab: complete')
 
 # Start the input loop
-input_loop()
+p = PandemicInfections(cities=cities)
+p.input_loop()
