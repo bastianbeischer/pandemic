@@ -105,8 +105,8 @@ class PandemicInfections(object):
     print('############################', file=f)
     print('###       The Deck       ###', file=f)
     for x in self.stack:
-      for city in x:
-        print(i, city, file=f)
+      for city in sorted(set(x), key=lambda v: x.count(v), reverse=True):
+        print('%d * %s' % (x.count(city), city), file=f)
       i += 1
       if i != len(self.stack):
         print('----------------------------', file=f)
@@ -115,8 +115,8 @@ class PandemicInfections(object):
     print('', file=f)
     print('############################', file=f)
     print('###       Discard        ###', file=f)
-    for city in self.cards_drawn:
-      print('d', city, file=f)
+    for city in sorted(set(self.cards_drawn), key=lambda v: self.cards_drawn.count(v), reverse=True):
+      print('%d * %s' % (self.cards_drawn.count(city), city), file=f)
     print('############################', file=f)
 
   def write_state(self):
@@ -128,34 +128,28 @@ class PandemicInfections(object):
     # Read the current state from disk
     self.stack = []
     self.cards_drawn = []
-    prev_level = 0
-    temp = []
+    phase = ''
     with open(self.state_filename, 'r') as f:
       for line in f:
         line = line.strip('\n')
         if 'The Deck' in line:
-          prev_level = 0
-          temp = []
-          self.stack = []
+          self.stack = [[]]
           self.cards_drawn = []
-        if line.startswith('#') or line.startswith('-') or not line:
+          phase = 'deck'
+        elif 'Discard' in line:
+          phase = 'discard'
+        if phase == 'deck' and line.startswith('-----'):
+          self.stack.append([])
+        if not re.search('^\d+ \* \w+$', line):
           continue
-        if not re.search('^(d|\d+) \w+$', line):
-          continue
-        level, city = line.split(' ')
-        if level == 'd':
-          self.cards_drawn.append(city)
-        else:
-          if level == prev_level:
-            temp.append(city)
+        occurences, _, city = line.split(' ')
+        for k in range(int(occurences)):
+          if phase == 'deck':
+            self.stack[-1].append(city)
+          elif phase == 'discard':
+            self.cards_drawn.append(city)
           else:
-            if temp:
-              self.stack.append(temp)
-            temp = []
-            temp.append(city)
-            prev_level = level
-      if temp:
-        self.stack.append(temp)
+            assert(False)
 
   def calculate_probability(self, city, N):
     # Calculate the probability to draw city at least once in N draws.
@@ -186,13 +180,13 @@ class PandemicInfections(object):
   def print_all_probabilities(self, f=sys.stdout):
     # Print probabilities
     print('', file=f)
-    print('%-15s %6d %6d %6d %6d %6d' % ('Name', 1, 2, 3, 4, 5), file=f)
-    print('--------------------------------------------------', file=f)
+    print('%-15s %11d %11d %11d %11d %11d' % ('Name', 1, 2, 3, 4, 5), file=f)
+    print('---------------------------------------------------------------------------', file=f)
     for x in sorted(set(self.cities), key=self.cities.index):
       line = '%-15s ' % x
       for n in range(1,6):
         p = self.calculate_probability(x, n)
-        line += "%5.1f%% " % (100.0 * p)
+        line += "%10.1f%% " % (100.0 * p)
       print(line, file=f)
 
   def print_probabilities(self, f=sys.stdout):
@@ -210,6 +204,11 @@ class PandemicInfections(object):
     # Write the current state to disk
     with open(self.state_filename, 'a') as f:
       self.print_probabilities(f=f)
+
+  def write_all_probabilities(self):
+    # Write the current state to disk
+    with open(self.state_filename, 'a') as f:
+      self.print_all_probabilities(f=f)
 
   def run(self):
     # The main input loop
