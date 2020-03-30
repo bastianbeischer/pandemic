@@ -36,7 +36,7 @@ class PandemicInfections(object):
 
   def draw_card(self, line):
     self.cards_drawn.append(line)
-    assert(len(self.current_pile) > 0)
+    assert(self.current_pile)
     self.current_pile.remove(line)
     if not self.current_pile:
       self.current_pile = self.stack.pop()
@@ -45,7 +45,7 @@ class PandemicInfections(object):
     question = 'Which city was drawn from the bottom in the Epidemic? '
     impossible = 'This is impossible!'
     line = input(question)
-    assert(len(self.stack) > 0)
+    assert(self.stack)
     front_pile = self.stack[0]
     self.stack.remove(front_pile)
     while not line in front_pile:
@@ -53,7 +53,7 @@ class PandemicInfections(object):
       line = input(question)
     front_pile.remove(line)
     self.cards_drawn.append(line)
-    if len(front_pile) > 0:
+    if front_pile:
       self.stack.insert(0, front_pile)
     self.stack.append(sorted(self.cards_drawn))
     self.cards_drawn = []
@@ -124,7 +124,7 @@ class PandemicInfections(object):
           break
       else:
         assert(False)
-      if len(toy_pile) == 0:
+      if not toy_pile:
         toy_pile = toy_stack.pop()
     return total_prob
 
