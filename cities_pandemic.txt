@@ -1,0 +1,55 @@
+# Blue
+SanFrancisco
+Chicago
+Atlanta
+Montreal
+NewYork
+Washington
+London
+Madrid
+Paris
+Essen
+Milan
+StPetersburg
+
+# Yellow
+LosAngeles
+MexicoCity
+Miami
+Bogota
+Lima
+Santiago
+SaoPaulo
+BuenosAires
+Lagos
+Kinshasa
+Khartum
+Johannesburg
+
+# Black
+Algiers
+Cairo
+Istanbul
+Moscow
+Teheran
+Bagdad
+Riad
+Karachi
+Mumbai
+Delhi
+Kalkutta
+Chennai
+
+# Red
+Bangkok
+Jakarta
+Beijing
+Shanghai
+HongKong
+HoChiMinhCity
+Seoul
+Taipei
+Manila
+Sydney
+Tokyo
+Osaka

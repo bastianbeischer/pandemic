@@ -1,0 +1,14 @@
+# Black
+3*Kairo
+3*Istanbul
+3*Tripolis
+
+# Blue
+3*London
+3*NewYork
+3*Washington
+
+# Yellow
+3*Jacksonville
+3*SaoPaolo
+3*Lagos
