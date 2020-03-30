@@ -30,9 +30,9 @@ class PandemicInfections(object):
 
   def __init__(self, cities):
     self.cities = cities
-    self.stack = []
-    self.current_pile = copy.copy(cities)
+    self.stack = [copy.copy(cities)]
     self.cards_drawn = []
+    self.current_pile = self.stack[-1]
 
   def draw_card(self, line):
     self.cards_drawn.append(line)
@@ -45,26 +45,17 @@ class PandemicInfections(object):
     question = 'Which city was drawn from the bottom in the Epidemic? '
     impossible = 'This is impossible!'
     line = input(question)
-    if len(self.stack) > 0:
-      front_pile = self.stack[0]
-      self.stack.remove(front_pile)
-      while not line in front_pile:
-        print(impossible)
-        line = input(question)
-      front_pile.remove(line)
-      self.cards_drawn.append(line)
-      if len(front_pile) > 0:
-        self.stack.insert(0, front_pile)
-    else:
-      while not line in self.current_pile:
-        print(impossible)
-        line = input(question)
-      self.current_pile.remove(line)
-      self.cards_drawn.append(line)
-    if len(self.current_pile) > 0:
-      self.stack.append(self.current_pile)
+    assert(len(self.stack) > 0)
+    front_pile = self.stack[0]
+    self.stack.remove(front_pile)
+    while not line in front_pile:
+      print(impossible)
+      line = input(question)
+    front_pile.remove(line)
+    self.cards_drawn.append(line)
+    if len(front_pile) > 0:
+      self.stack.insert(0, front_pile)
     self.stack.append(sorted(self.cards_drawn))
-    self.current_pile = self.stack.pop()
     self.cards_drawn = []
 
   def print_state(self, f=sys.stdout):
@@ -77,8 +68,6 @@ class PandemicInfections(object):
         print(i, city, file=f)
       print('----------------------------', file=f)
       i += 1
-    for city in self.current_pile:
-      print('c', city, file=f)
     print('############################', file=f)
     print('', file=f)
     print('############################', file=f)
@@ -93,38 +82,33 @@ class PandemicInfections(object):
 
   def read_state(self):
     self.stack = []
-    self.current_pile = []
     self.cards_drawn = []
 
-    prev_cat = 0
+    prev_level = 0
     temp = []
     with open('state.txt', 'r') as f:
       for line in f:
         line = line.strip('\n')
         if line.startswith('#') or line.startswith('-') or not line:
           continue
-        cat, city = line.split(' ')
-        print(cat, city)
-        if cat == 'c':
-          self.current_pile.append(city)
-        elif cat == 'd':
+        level, city = line.split(' ')
+        if level == 'd':
           self.cards_drawn.append(city)
         else:
-          if cat == prev_cat:
+          if level == prev_level:
             temp.append(city)
           else:
-            self.stack.append(temp)
+            if temp:
+              self.stack.append(temp)
             temp = []
             temp.append(city)
-            prev_cat = cat
-      if len(temp) > 0:
+            prev_level = level
+      if temp:
         self.stack.append(temp)
-      if len(self.current_pile) == 0:
-        self.current_pile = self.stack.pop()
 
   def calculate_probability(self, city, N):
     toy_stack = copy.deepcopy(self.stack)
-    toy_pile = copy.deepcopy(self.current_pile)
+    toy_pile = toy_stack.pop()
 
     total_prob = 0.0
     for i in range(N):
