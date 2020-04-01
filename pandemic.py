@@ -151,64 +151,80 @@ class PandemicInfections(object):
           else:
             assert(False)
 
-  def calculate_probability(self, city, N):
-    # Calculate the probability to draw city at least once in N draws.
-    toy_stack = copy.deepcopy(self.stack)
-    N_cards = sum([len(x) for x in toy_stack])
-    N = min(N, N_cards)
-    total_prob = 0.0
-    toy_pile = toy_stack.pop()
-    for i in range(N):
-      if not toy_pile:
-        assert(toy_stack)
-        toy_pile = toy_stack.pop()
-      total = len(toy_pile)
-      assert(total > 0)
-      count = toy_pile.count(city)
-      probability = count / total
-      total_prob += (1.0 - total_prob) * probability
-      if total_prob == 1.0:
-        return total_prob
-      for x in toy_pile:
-        if x != city:
-          toy_pile.remove(x)
-          break
-      else:
-        assert(False)
-    return total_prob
+  def calculate_probability(self, city, M, N, stack=None):
+    if stack is None:
+      stack = copy.deepcopy(self.stack)
+      N_cards = sum([len(x) for x in stack])
+      N = min(N, N_cards)
 
-  def print_all_probabilities(self, f=sys.stdout):
-    # Print probabilities
-    print('', file=f)
-    print('%-15s %11d %11d %11d %11d %11d' % ('Name', 1, 2, 3, 4, 5), file=f)
-    print('---------------------------------------------------------------------------', file=f)
-    for x in sorted(set(self.cities), key=self.cities.index):
-      line = '%-15s ' % x
-      for n in range(1,6):
-        p = self.calculate_probability(x, n)
-        line += "%10.1f%% " % (100.0 * p)
-      print(line, file=f)
+    # Stop conditions
+    if M == 0:
+      return 1.0
+    if M > N:
+      return 0.0
+
+    assert(M >= 1)
+    assert(N >= 1)
+    assert(stack)
+
+    pile = stack.pop()
+    count = pile.count(city)
+    total = len(pile)
+    assert(total > 0)
+    p_city = count / total
+
+    # If there was only one card to draw: This is the leaf probability
+    if N == 1:
+      return p_city
+
+    # Prepare two new piles, one with the city removed and one with some other city removed (if any)
+    pile1 = copy.copy(pile)
+    if city in pile1:
+      pile1.remove(city)
+    pile2 = copy.copy(pile)
+    for x in pile2:
+      if x != city:
+        pile2.remove(x)
+        break
+
+    # Add the two new piles to two stacks
+    stack1 = copy.copy(stack)
+    stack2 = copy.copy(stack)
+    if pile1:
+      stack1.append(pile1)
+    if pile2:
+      stack2.append(pile2)
+
+    # Add the two branch probabilities
+    p1 = (p_city       * self.calculate_probability(city, M-1, N-1, stack=stack1)) if p_city > 0.0 else 0.0
+    p2 = ((1 - p_city) * self.calculate_probability(city, M,   N-1, stack=stack2)) if p_city < 1.0 else 0.0
+    return p1 + p2
 
   def print_probabilities(self, f=sys.stdout):
-    # Print probabilities
     print('', file=f)
-    print('%-15s %6s' % ('Name', 'N=%d'% self.level), file=f)
-    print('----------------------', file=f)
-    probabilities = [ (x, self.calculate_probability(x, self.level)) for x in set(self.cities) ]
-    for x, p in sorted(probabilities, key=lambda x: x[1], reverse=True):
+
+    header = '%-15s' % 'Name'
+    for i in range(1, self.level + 1):
+      header += ' %6s' % ("N>=%d" % i)
+    print(header, file=f)
+    print(len(header)*'-', file=f)
+
+    probabilities = dict()
+    for x in set(self.cities):
+      probabilities[x] = []
+      for M in range(1, self.level + 1):
+        probabilities[x].append(self.calculate_probability(x, M, self.level))
+
+    for x, p in sorted(probabilities.items(), key=lambda x: x[1][0], reverse=True):
       line = '%-15s ' % x
-      line += "%5.1f%%" % (100.0 * p)
+      for px in p:
+        line += "%5.1f%% " % (100.0 * px)
       print(line, file=f)
 
   def write_probabilities(self):
     # Write the current state to disk
     with open(self.state_filename, 'a') as f:
       self.print_probabilities(f=f)
-
-  def write_all_probabilities(self):
-    # Write the current state to disk
-    with open(self.state_filename, 'a') as f:
-      self.print_all_probabilities(f=f)
 
   def run(self):
     # The main input loop
