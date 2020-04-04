@@ -12,3 +12,7 @@
 3*Jacksonville
 3*SaoPaolo
 3*Lagos
+
+# Blue
+2*Chicago
+1*Atlanta
