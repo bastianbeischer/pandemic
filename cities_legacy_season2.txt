@@ -17,3 +17,4 @@
 2*Chicago
 1*Atlanta
 2*Paris
+2*Frankfurt
