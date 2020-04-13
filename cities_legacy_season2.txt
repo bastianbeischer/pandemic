@@ -1,6 +1,5 @@
 # Black
 3*Kairo
-3*Istanbul
 3*Tripolis
 
 # Blue
@@ -18,3 +17,9 @@
 1*Atlanta
 2*Paris
 2*Frankfurt
+
+2*BuenosAires
+
+1*Lima
+1*Moskau
+1*LosAngeles
