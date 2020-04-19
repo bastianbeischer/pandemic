@@ -4,6 +4,7 @@ import copy
 import readline
 import sys
 import re
+import os
 
 class SimpleCompleter(object):
 
@@ -234,12 +235,19 @@ class PandemicInfections(object):
     self.write_state()
     self.write_probabilities()
 
+  def initialize(self):
+    if not os.path.exists(self.state_filename):
+      self.level = 9
+      self.print()
+      self.write()
+      self.level = 2
+    else:
+      self.read_state()
+      self.print()
+
   def run(self):
     # The main input loop
-    self.level = 9
-    self.print()
-    self.write()
-    self.level = 2
+    self.initialize()
     question = 'Please enter the name of the city which was drawn or "EPIDEMIC/READ": '
     impossible = 'This is impossible!'
     while True:
