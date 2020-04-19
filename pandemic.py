@@ -121,7 +121,7 @@ class PandemicInfections(object):
 
   def write_state(self):
     # Write the current state to disk
-    with open(self.state_filename, 'a') as f:
+    with open(self.state_filename, 'w') as f:
       self.print_state(f=f)
 
   def read_state(self):
@@ -226,8 +226,20 @@ class PandemicInfections(object):
     with open(self.state_filename, 'a') as f:
       self.print_probabilities(f=f)
 
+  def print(self):
+    self.print_state()
+    self.print_probabilities()
+
+  def write(self):
+    self.write_state()
+    self.write_probabilities()
+
   def run(self):
     # The main input loop
+    self.level = 9
+    self.print()
+    self.write()
+    self.level = 2
     question = 'Please enter the name of the city which was drawn or "EPIDEMIC/READ": '
     impossible = 'This is impossible!'
     while True:
@@ -247,10 +259,8 @@ class PandemicInfections(object):
       else:
         self.draw_card(line)
       # Print current state and probabilities, write state to disk
-      self.print_state()
-      self.print_probabilities()
-      self.write_state()
-      self.write_probabilities()
+      self.print()
+      self.write()
 
 # Start the input loop
 cities_file = sys.argv[1]
