@@ -1,25 +1,19 @@
-# Black
-3*Kairo
-3*Tripolis
-
-# Blue
-3*London
-3*NewYork
 3*Washington
-
-# Yellow
-3*Jacksonville
+3*Tripolis
 3*SaoPaolo
+3*NewYork
+3*London
 3*Lagos
-
-# Blue
-2*Chicago
-1*Atlanta
+2*SanFrancisco
 2*Paris
+2*Jacksonville
 2*Frankfurt
-
+2*Chicago
 2*BuenosAires
-
-1*Lima
+2*Bogota
+1*Santiago
 1*Moskau
-1*LosAngeles
+1*Lima
+1*Kinshasa
+1*Kairo
+1*Atlanta
