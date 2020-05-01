@@ -2,7 +2,7 @@
 3*SaoPaolo
 3*Tripolis
 3*Washington
-2*BuenosAires
+#2*BuenosAires
 2*Chicago
 2*Frankfurt
 2*Jacksonville
