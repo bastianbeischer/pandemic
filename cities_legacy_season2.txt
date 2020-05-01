@@ -9,7 +9,7 @@
 2*Paris
 2*Daressalam
 2*Antananarivo
-2*Tripolis
+#2*Tripolis
 1*Atlanta
 1*Bagdad
 1*Bogota
@@ -22,4 +22,4 @@
 1*NewYork
 1*StPetersburg
 1*Teheran
-1*SaoPaolo
+#1*SaoPaolo
