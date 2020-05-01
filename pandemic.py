@@ -30,22 +30,26 @@ class SimpleCompleter(object):
 
 class PandemicInfections(object):
 
-  def __init__(self, cities_file, state_filename='state.txt'):
+  def __init__(self, cities_filename, state_filename='state.txt'):
     self.cities = []
     self.stack = []
     self.cards_drawn = []
+    self.commented_cities = []
+    self.cities_filename = cities_filename
     self.state_filename = state_filename
     self.level = 2
-    self.setup(cities_file)
+    self.setup()
 
-  def setup(self, cities_file):
-    self.read_cities(cities_file)
+  def setup(self):
+    self.read_cities()
     self.stack = [copy.copy(self.cities)]
     # Register the completer function and bind tab
     options = copy.copy(self.cities)
     options = sorted(set(options), key=options.index)
     options.append('READ')
     options.append('EPIDEMIC')
+    options.append('LEVEL')
+    options.append('VACCINATE')
     readline.set_completer(SimpleCompleter(options).complete)
     readline.parse_and_bind('tab: complete')
 
@@ -58,12 +62,14 @@ class PandemicInfections(object):
       line = input(question)
     self.level = int(line)
 
-  def read_cities(self, filename):
+  def read_cities(self):
     # Read input file with city names.
     self.cities = []
-    with open(filename, 'r') as f:
+    with open(self.cities_filename, 'r') as f:
       for line in f:
         line = line.strip('\n')
+        if line.startswith('#'):
+          self.commented_cities.append(line)
         if not line or line.startswith('#'):
           continue
         if '*' in line:
@@ -72,6 +78,14 @@ class PandemicInfections(object):
         else:
           self.cities += [line]
 
+  def write_cities(self):
+    # Read input file with city names.
+    with open(self.cities_filename, 'w') as f:
+      for city in sorted(set(self.cities), key=lambda v: self.cities.count(v), reverse=True):
+        print('%d*%s' % (self.cities.count(city), city), file=f)
+      for l in self.commented_cities:
+        print(l, file=f)
+
   def draw_card(self, line):
     # Draw card from the top of the stack and add it to the discard pile.
     self.cards_drawn.append(line)
@@ -79,6 +93,17 @@ class PandemicInfections(object):
     self.stack[-1].remove(line)
     if not self.stack[-1]:
       self.stack.pop()
+
+  def vaccinate(self):
+    question='Which city? '
+    line = input(question)
+    while line not in self.cards_drawn:
+      line = input(question)
+    assert(line in self.cards_drawn)
+    assert(line in self.cities)
+    self.cards_drawn.remove(line)
+    self.cities.remove(line)
+    self.write_cities()
 
   def epidemic(self):
     question = 'Which city was drawn from the bottom in the Epidemic? '
@@ -248,13 +273,13 @@ class PandemicInfections(object):
   def run(self):
     # The main input loop
     self.initialize()
-    question = 'Please enter the name of the city which was drawn or "EPIDEMIC/READ": '
+    question = 'Please enter the name of the city which was drawn or "EPIDEMIC/READ/LEVEL/VACCINATE": '
     impossible = 'This is impossible!'
     while True:
       # Get new input
       print()
       line = input(question)
-      while line not in ['EPIDEMIC', 'READ', 'LEVEL'] and not line in self.stack[-1]:
+      while line not in ['EPIDEMIC', 'READ', 'LEVEL', 'VACCINATE'] and not line in self.stack[-1]:
         print(impossible)
         line = input(question)
       # Process
@@ -264,6 +289,8 @@ class PandemicInfections(object):
         self.read_state()
       elif line == 'EPIDEMIC':
         self.epidemic()
+      elif line == 'VACCINATE':
+        self.vaccinate()
       else:
         self.draw_card(line)
       # Print current state and probabilities, write state to disk
@@ -273,5 +300,5 @@ class PandemicInfections(object):
 # Start the input loop
 cities_file = sys.argv[1]
 output_file = sys.argv[2] if len(sys.argv) > 2 else 'state.txt'
-p = PandemicInfections(cities_file=cities_file, state_filename=output_file)
+p = PandemicInfections(cities_filename=cities_file, state_filename=output_file)
 p.run()
