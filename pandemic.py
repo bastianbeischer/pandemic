@@ -5,6 +5,9 @@ import readline
 import sys
 import re
 import os
+import pickle
+
+special_commands = ['EPIDEMIC', 'READ', 'LEVEL', 'VACCINATE', 'UNDO']
 
 class SimpleCompleter(object):
 
@@ -28,6 +31,7 @@ class SimpleCompleter(object):
       response = None
     return response
 
+
 class PandemicInfections(object):
 
   def __init__(self, cities_filename, state_filename='state.txt'):
@@ -38,6 +42,7 @@ class PandemicInfections(object):
     self.cities_filename = cities_filename
     self.state_filename = state_filename
     self.level = 2
+    self.backups = []
     self.setup()
 
   def setup(self):
@@ -46,10 +51,7 @@ class PandemicInfections(object):
     # Register the completer function and bind tab
     options = copy.copy(self.cities)
     options = sorted(set(options), key=options.index)
-    options.append('READ')
-    options.append('EPIDEMIC')
-    options.append('LEVEL')
-    options.append('VACCINATE')
+    options.extend(special_commands)
     readline.set_completer(SimpleCompleter(options).complete)
     readline.parse_and_bind('tab: complete')
 
@@ -260,6 +262,23 @@ class PandemicInfections(object):
     self.write_state()
     self.write_probabilities()
 
+  def store_backup(self):
+    self.backups.append(pickle.dumps(self))
+
+  def undo(self):
+    if len(self.backups) < 2:
+      print('Not enough backups...')
+      return
+    b = pickle.loads(self.backups[-2])
+    self.cities = b.cities
+    self.stack = b.stack
+    self.cards_drawn = b.cards_drawn
+    self.commented_cities = b.commented_cities
+    self.cities_filename = b.cities_filename
+    self.state_filename = b.state_filename
+    self.level = b.level
+    self.backups = b.backups
+
   def initialize(self):
     if not os.path.exists(self.state_filename):
       self.level = 9
@@ -269,17 +288,18 @@ class PandemicInfections(object):
     else:
       self.read_state()
       self.print()
+    self.store_backup()
 
   def run(self):
     # The main input loop
     self.initialize()
-    question = 'Please enter the name of the city which was drawn or "EPIDEMIC/READ/LEVEL/VACCINATE": '
+    question = 'Please enter the name of the city which was drawn or "%s": ' % ('/'.join(special_commands))
     impossible = 'This is impossible!'
     while True:
       # Get new input
       print()
       line = input(question)
-      while line not in ['EPIDEMIC', 'READ', 'LEVEL', 'VACCINATE'] and not line in self.stack[-1]:
+      while line not in special_commands and not line in self.stack[-1]:
         print(impossible)
         line = input(question)
       # Process
@@ -291,11 +311,14 @@ class PandemicInfections(object):
         self.epidemic()
       elif line == 'VACCINATE':
         self.vaccinate()
+      elif line == 'UNDO':
+        self.undo()
       else:
         self.draw_card(line)
       # Print current state and probabilities, write state to disk
       self.print()
       self.write()
+      self.store_backup()
 
 # Start the input loop
 cities_file = sys.argv[1]
