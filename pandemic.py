@@ -262,6 +262,11 @@ class PandemicInfections(object):
     self.write_state()
     self.write_probabilities()
 
+  def __getstate__(self):
+    attributes = self.__dict__.copy()
+    del attributes['backups']
+    return attributes
+
   def store_backup(self):
     self.backups.append(pickle.dumps(self))
 
@@ -277,7 +282,7 @@ class PandemicInfections(object):
     self.cities_filename = b.cities_filename
     self.state_filename = b.state_filename
     self.level = b.level
-    self.backups = b.backups
+    del self.backups[-2:]
 
   def initialize(self):
     if not os.path.exists(self.state_filename):
