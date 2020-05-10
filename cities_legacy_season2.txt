@@ -5,9 +5,9 @@
 2*Riad
 2*Johannesburg
 2*Daressalam
+2*Kairo
 1*Jacksonville
 1*StPetersburg
-1*Kairo
 1*Kalkutta
 1*Teheran
 1*Moskau
