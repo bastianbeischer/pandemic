@@ -8,7 +8,6 @@
 1*Kairo
 1*Bogota
 1*Teheran
-1*Paris
 1*Jacksonville
 1*Moskau
 1*Kalkutta
@@ -31,3 +30,4 @@
 #1*Osaka
 #1*Seoul
 #1*Tokyo
+#1*Paris
