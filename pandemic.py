@@ -7,7 +7,7 @@ import re
 import os
 import pickle
 
-special_commands = ['EPIDEMIC', 'READ', 'LEVEL', 'VACCINATE', 'UNDO']
+special_commands = ['EPIDEMIC', 'REPIDEMIC', 'READ', 'LEVEL', 'VACCINATE', 'UNDO']
 
 class SimpleCompleter(object):
 
@@ -97,7 +97,7 @@ class PandemicInfections(object):
       self.stack.pop()
 
   def vaccinate(self):
-    question='Which city? '
+    question='Which city was vaccinated? '
     line = input(question)
     while line not in self.cards_drawn:
       line = input(question)
@@ -107,16 +107,18 @@ class PandemicInfections(object):
     self.cities.remove(line)
     self.write_cities()
 
-  def epidemic(self):
+  def epidemic(self, line=None):
     question = 'Which city was drawn from the bottom in the Epidemic? '
     impossible = 'This is impossible!'
     # Draw card from front of the stack ("the bottom")
-    line = input(question)
     assert(self.stack)
     front_pile = self.stack[0]
-    while not line in front_pile:
-      print(impossible)
+    if not line:
       line = input(question)
+      while not line in front_pile:
+        print(impossible)
+        line = input(question)
+    assert(line in front_pile)
     self.cards_drawn.append(line)
     # Remove card from front pile and remove it from the stack if it is now empty.
     front_pile.remove(line)
@@ -125,6 +127,14 @@ class PandemicInfections(object):
     # Push discard pile on stack and reset it.
     self.stack.append(sorted(self.cards_drawn))
     self.cards_drawn = []
+
+  def repidemic(self):
+    question='Which city was drawn from box 6? '
+    line = input(question)
+    self.stack[0].append(line)
+    self.cities.append(line)
+    self.write_cities()
+    self.epidemic(line)
 
   def print_state(self, f=sys.stdout):
     # Print the draw deck with sections
@@ -314,6 +324,8 @@ class PandemicInfections(object):
         self.read_state()
       elif line == 'EPIDEMIC':
         self.epidemic()
+      elif line == 'REPIDEMIC':
+        self.repidemic()
       elif line == 'VACCINATE':
         self.vaccinate()
       elif line == 'UNDO':
