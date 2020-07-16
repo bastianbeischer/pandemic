@@ -15,6 +15,10 @@ class SimpleCompleter(object):
     self.options = sorted(options)
     return
 
+  def add_to_options(self, option):
+    self.options.append(option)
+    self.options = sorted(self.options)
+
   def complete(self, text, state):
     response = None
     if state == 0:
@@ -43,6 +47,7 @@ class PandemicInfections(object):
     self.state_filename = state_filename
     self.level = 2
     self.backups = []
+    self.completer = None
     self.setup()
 
   def setup(self):
@@ -52,7 +57,8 @@ class PandemicInfections(object):
     options = copy.copy(self.cities)
     options = sorted(set(options), key=options.index)
     options.extend(special_commands)
-    readline.set_completer(SimpleCompleter(options).complete)
+    self.completer = SimpleCompleter(options)
+    readline.set_completer(self.completer.complete)
     readline.parse_and_bind('tab: complete')
 
   def set_level(self):
@@ -133,6 +139,7 @@ class PandemicInfections(object):
     line = input(question)
     self.stack[0].append(line)
     self.cities.append(line)
+    self.completer.add_to_options(line)
     self.write_cities()
     self.epidemic(line)
 
